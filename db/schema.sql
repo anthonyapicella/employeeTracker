@@ -1,4 +1,4 @@
-DROP DATABASE IF EXISTS employee_trackerdDB;
+DROP DATABASE IF EXISTS employee_trackerDB;
 
 CREATE database employee_trackerDB;
 
@@ -18,11 +18,11 @@ CREATE TABLE role (
 );
 
 CREATE TABLE employee (
-    id INTEGER AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
     first_name VARCHAR(30) NOT NULL,
     last_name VARCHAR(30) NOT NULL,
     role_id INT NOT NULL,
     FOREIGN KEY (role_id) REFERENCES role (id),
     manager_id INT NULL,
-    FOREIGN KEY (manager_id) REFERENCES employee (id)
+    FOREIGN KEY (manager_id) REFERENCES role (id)
 );
