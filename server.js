@@ -9,14 +9,16 @@ const connection = mysql.createConnection({
 	database: 'employee_trackerDB',
 });
 
+// run application function on connection
+
 connection.connect((err) => {
 	if (err) throw err;
 	makeItSo();
 });
 
+// run application
 function makeItSo() {
 	console.log(`
-
 
 
 
@@ -35,20 +37,25 @@ function makeItSo() {
      ██    ██████  ███████ ██      █████   █████   ██████                
      ██    ██   ██ ██   ██ ██      ██  ██  ██      ██   ██               
      ██    ██   ██ ██   ██  ██████ ██   ██ ███████ ██   ██                            
-  `);
+`);
+
+	// inquirer function
 	runStart();
 }
 
 function runStart() {
+	// user chooses how to begin
 	inquirer
 		.prompt({
 			name: 'selection',
 			type: 'list',
-			message: 'Welcome -- Please make your selection:',
+			message: 'Please make your selection: ',
 			choices: [
 				'View All Employees',
 				'View All Employees by Role',
 				'View All Employees by Department',
+				'Add New Employee',
+				'Add New Role',
 				'View Total Salaries',
 				'End Program',
 			],
@@ -65,6 +72,14 @@ function runStart() {
 
 				case 'View All Employees by Department':
 					viewAllDepartment();
+					break;
+
+				case 'Add New Employee':
+					addNewEmployee();
+					break;
+
+				case 'Add New Role':
+					addNewRole();
 					break;
 
 				case 'View Total Salaries':
@@ -117,8 +132,6 @@ function viewAllRole() {
 				])
 				.then(function (answer) {
 					console.log(answer);
-					console.log(answer.roleSelection);
-
 					connection.query(
 						`SELECT employee.first_name, employee.last_name, role.salary, role.title, department.name as "Department"
         FROM employee_trackerDB.employee
@@ -160,8 +173,6 @@ function viewAllDepartment() {
 				])
 				.then(function (answer) {
 					console.log(answer);
-					console.log(answer.deptSelection);
-
 					connection.query(
 						`SELECT employee.first_name, employee.last_name, role.salary, role.title, department.name as "Department"
         FROM employee_trackerDB.employee
@@ -180,6 +191,139 @@ function viewAllDepartment() {
 	);
 }
 
+function addNewEmployee() {
+	connection.query(
+		'SELECT role.title, role.id FROM employee_trackerDB.role',
+		function (err, res) {
+			if (err) throw err;
+
+			inquirer
+				.prompt([
+					{
+						name: 'first_name',
+						type: 'input',
+						message: 'Employees first name:',
+					},
+					{
+						name: 'last_name',
+						type: 'input',
+						message: 'Employees last name:',
+					},
+					{
+						name: 'role',
+						type: 'list',
+						message: 'Choose assigned role:',
+						name: 'selection',
+						type: 'list',
+						choices: function () {
+							var roleArray = [];
+							for (var i = 0; i < res.length; i++) {
+								roleArray.push(res[i].title);
+							}
+							return roleArray;
+						},
+					},
+				])
+				.then(function (answer) {
+					var role_id = answer.selection;
+
+					for (var i = 0; i < res.length; i++) {
+						if (res[i].title == answer.selection) {
+							role_id = res[i].id;
+						}
+					}
+
+					connection.query(
+						'INSERT INTO employee SET ? ',
+						{
+							first_name: answer.first_name,
+							last_name: answer.last_name,
+							role_id: role_id,
+						},
+						function (err) {
+							if (err) throw err;
+
+							console.log(
+								`
+                Welcome: ${answer.selection}, ${answer.first_name} ${answer.last_name}.
+                `
+							);
+
+							runStart();
+						}
+					);
+				});
+		}
+	);
+}
+
+function addNewRole() {
+	connection.query(
+		'SELECT department.name, department.id FROM employee_trackerDB.department',
+		function (err, res) {
+			if (err) throw err;
+
+			inquirer
+				.prompt([
+					{
+						name: 'deptSelection',
+						type: 'list',
+						choices: function () {
+							var deptArray = [];
+							var deptArrayID = [];
+							for (var i = 0; i < res.length; i++) {
+								deptArray.push(res[i].name);
+								deptArrayID.push(res[i].id);
+							}
+							return deptArray;
+						},
+						message: 'Select a department:',
+					},
+					{
+						name: 'title',
+						type: 'input',
+						message: 'Enter title:',
+					},
+					{
+						name: 'salary',
+						type: 'input',
+						message: 'Monthly credits:',
+					},
+				])
+				.then(function (answer) {
+					var department_id = answer.deptSelection;
+
+					for (var i = 0; i < res.length; i++) {
+						if (res[i].name === answer.deptSelection) {
+							department_id = res[i].id;
+						}
+					}
+
+					connection.query(
+						'INSERT INTO role SET ?',
+						{
+							title: answer.title,
+							salary: answer.salary,
+							department_id: department_id,
+						},
+						function (err) {
+							if (err) throw err;
+
+							console.log(
+								`
+                New position created in the ${answer.deptSelection} Department: ${answer.title}, earning ${answer.salary} Federation Credits per month.
+                `
+							);
+
+							runStart();
+						}
+					);
+				});
+		}
+	);
+}
+
+// get this function to return sums based on departments. maybe using **viewAllDepartment**
 function viewSalaries() {
 	connection.query(
 		'SELECT SUM(role.salary) AS "Total Salaries" FROM employee_trackerDB.role',
@@ -205,8 +349,9 @@ function endProgram() {
  ██    ██ ██    ██ ██    ██ ██   ██       ██   ██   ██    ██      
   ██████   ██████   ██████  ██████        ██████    ██    ███████ 
                                                                   
-                                                                  
+  
+ 'Live long, and prosper'                                                              
  
-  `);
+`);
 	connection.end();
 }
