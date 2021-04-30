@@ -1,7 +1,7 @@
 INSERT INTO department (name) 
  VALUES ('Command'), 
         ('Security'),
-        ('Science'),
+        ('Bridge Crew'),
         ('Engineering');
 
 INSERT INTO role (title, salary, department_id)

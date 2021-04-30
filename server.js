@@ -45,6 +45,7 @@ function makeItSo() {
 
 function runStart() {
 	// user chooses how to begin
+	// depending on selection, appropriate function will be called
 	inquirer
 		.prompt({
 			name: 'selection',
@@ -103,6 +104,7 @@ function runStart() {
 		});
 }
 
+// selects all employees from database and displays in a table
 function viewAll() {
 	connection.query(
 		`SELECT employee.first_name, employee.last_name, role.salary, role.title, department.name as "department"
@@ -119,6 +121,7 @@ function viewAll() {
 	);
 }
 
+// selects all employees by role and displays in table
 function viewAllRole() {
 	connection.query(
 		'SELECT role.title FROM employee_trackerDB.role',
@@ -131,6 +134,7 @@ function viewAllRole() {
 						name: 'roleSelection',
 						type: 'list',
 						choices: function () {
+							// creates an empty array and loops through roles to provide selections dynamically
 							let roleArray = [];
 							for (let i = 0; i < res.length; i++) {
 								roleArray.push(res[i].title);
@@ -141,7 +145,7 @@ function viewAllRole() {
 					},
 				])
 				.then(function (answer) {
-					console.log(answer);
+					// takes user selection, grabs necessary columns from tables and creates table of employees based on selected role
 					connection.query(
 						`SELECT employee.first_name, employee.last_name, role.salary, role.title, department.name as "department"
         FROM employee_trackerDB.employee
@@ -150,7 +154,6 @@ function viewAllRole() {
         WHERE role.title LIKE "${answer.roleSelection}"`,
 						function (err, res) {
 							if (err) throw err;
-
 							console.table(res);
 							runStart();
 						}
@@ -161,11 +164,11 @@ function viewAllRole() {
 }
 
 function viewAllDepartment() {
+	// same process for viewAllRoles, only adding and using department related columns
 	connection.query(
 		'SELECT department.name FROM employee_trackerDB.department',
 		function (err, res) {
 			if (err) throw err;
-
 			inquirer
 				.prompt([
 					{
@@ -202,6 +205,7 @@ function viewAllDepartment() {
 }
 
 function addNewEmployee() {
+	// grab title and id columns for user input
 	connection.query(
 		'SELECT role.title, role.id FROM employee_trackerDB.role',
 		function (err, res) {
@@ -242,7 +246,7 @@ function addNewEmployee() {
 							role_id = res[i].id;
 						}
 					}
-
+					// after user inputs first and last name, and chooses role, insert new data into employee table
 					connection.query(
 						'INSERT INTO employee SET ? ',
 						{
@@ -266,6 +270,7 @@ function addNewEmployee() {
 }
 
 function updateEmployee() {
+	//grabs all necessary employee data and accepts user inputs to change desired data
 	connection.query(
 		`SELECT employee.first_name, employee.last_name, role.salary, role.title, role.id, department.name as "department"
     FROM employee_trackerDB.employee
@@ -273,6 +278,7 @@ function updateEmployee() {
     INNER JOIN department ON role.department_id = department.id`,
 
 		function (err, res) {
+      // select specific employee
 			if (err) throw err;
 			inquirer
 				.prompt([
@@ -292,13 +298,14 @@ function updateEmployee() {
 					},
 				])
 				.then(function (answer) {
+          // grab role data
 					connection.query(
 						`SELECT role.title, role.id, role.salary 
             FROM employee_trackerDB.role`,
 
 						function (err, resRole) {
+              // create array for role selection and prompt user for employees new role
 							if (err) throw err;
-
 							inquirer
 								.prompt([
 									{
@@ -364,7 +371,7 @@ function updateEmployee() {
 																result[i].id;
 														}
 													}
-
+                          // update table
 													connection.query(
 														'UPDATE employee SET ? WHERE ?',
 														[
@@ -397,6 +404,7 @@ function updateEmployee() {
 }
 
 function addNewRole() {
+  // function allows user to select department and add a new role to that table
 	connection.query(
 		`SELECT department.name, department.id 
     FROM employee_trackerDB.department`,
@@ -464,6 +472,7 @@ function addNewRole() {
 }
 
 function addNewDepartment() {
+  // function allows user to create a new department
 	inquirer
 		.prompt([
 			{
@@ -482,18 +491,22 @@ function addNewDepartment() {
 					if (err) throw err;
 					console.log(`
            ${answer.name} Department created successfully.
-           `
-					);
+           `);
 					runStart();
 				}
 			);
 		});
 }
 
-// get this function to return sums based on departments. maybe using **viewAllDepartment**
+// this function returns sums based on departments but only through department ID. Look further into using dept name 
 function viewSalaries() {
 	connection.query(
-		'SELECT SUM(role.salary) AS "Total Salaries" FROM employee_trackerDB.role',
+		`SELECT role.department_id, result1.total_amt 
+    FROM role,  
+    (SELECT role.department_id, SUM(role.salary) total_amt  
+    FROM role  
+    GROUP BY department_id) result1 
+    WHERE result1.department_id = role.department_id;`,
 
 		function (err, res) {
 			if (err) throw err;
