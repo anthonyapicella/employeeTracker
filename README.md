@@ -86,6 +86,11 @@ To get a local copy up and running follow these simple steps.
 ## Usage
 
 When the user runs the application they are prompted with a series of questions allowing them to enter their employees information. Includes 
+* Add departments, roles, employees
+
+* View departments, roles, employees
+
+* Update employee roles
 
 ## Contact
 
